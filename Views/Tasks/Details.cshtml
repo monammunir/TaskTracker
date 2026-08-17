@@ -1,0 +1,56 @@
+@model TaskTrackr.Models.TaskItem
+
+@{
+    ViewData["Title"] = "Task Details";
+}
+
+<h1 class="fw-bold mb-4">Task Details</h1>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <h3>@Model.Title</h3>
+
+        <hr />
+
+        <dl class="row">
+
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">
+                @(Model.Description ?? "No description")
+            </dd>
+
+            <dt class="col-sm-3">Due Date</dt>
+            <dd class="col-sm-9">
+                @(Model.DueDate?.ToString("dd MMMM yyyy") ?? "No due date")
+            </dd>
+
+            <dt class="col-sm-3">Priority</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-warning text-dark">
+                    @Model.Priority
+                </span>
+            </dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-primary">
+                    @Model.Status
+                </span>
+            </dd>
+
+        </dl>
+
+        <a asp-action="Edit"
+           asp-route-id="@Model.Id"
+           class="btn btn-warning">
+            Edit
+        </a>
+
+        <a asp-action="Index"
+           class="btn btn-secondary">
+            Back
+        </a>
+
+    </div>
+</div>
