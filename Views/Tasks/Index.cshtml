@@ -1,90 +1,212 @@
 @model IEnumerable<TaskTrackr.Models.TaskItem>
 
 @{
-    ViewData["Title"] = "My Tasks";
+    ViewData["Title"] = "Dashboard";
+
+    var totalTasks = Model.Count();
+    var completedTasks = Model.Count(t => t.Status == "Completed");
+    var pendingTasks = Model.Count(t => t.Status == "Pending");
+    var inProgressTasks = Model.Count(t => t.Status == "In Progress");
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+
     <div>
-        <h1 class="fw-bold">My Tasks</h1>
-        <p class="text-muted mb-0">Manage your tasks efficiently.</p>
+        <h1 class="dashboard-title mb-1">
+            My Tasks
+        </h1>
+
+        <p class="dashboard-subtitle mb-0">
+            Stay organized and keep your work on track.
+        </p>
     </div>
 
-    <a asp-action="Create" class="btn btn-primary">
+    <a asp-action="Create"
+       class="btn btn-primary mt-3 mt-md-0 px-4">
         + New Task
     </a>
+
 </div>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="alert alert-success alert-dismissible fade show mb-4">
+        ✓ @TempData["SuccessMessage"]
+
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
     </div>
 }
 
-<div class="card shadow-sm mb-4">
-    <div class="card-body">
-        <form asp-action="Index" method="get">
-            <div class="row g-3">
+<!-- Statistics -->
 
-                <div class="col-md-4">
-                    <label class="form-label">Search</label>
-                    <input type="text"
-                           name="search"
-                           value="@ViewBag.Search"
-                           class="form-control"
-                           placeholder="Search tasks..." />
-                </div>
+<div class="row g-3 mb-4">
 
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="">All Statuses</option>
-
-                        @foreach (var item in ViewBag.Statuses)
-                        {
-                            <option value="@item"
-                                    selected="@(ViewBag.Status == item ? "selected" : null)">
-                                @item
-                            </option>
-                        }
-                    </select>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label">Priority</label>
-                    <select name="priority" class="form-select">
-                        <option value="">All Priorities</option>
-
-                        @foreach (var item in ViewBag.Priorities)
-                        {
-                            <option value="@item"
-                                    selected="@(ViewBag.Priority == item ? "selected" : null)">
-                                @item
-                            </option>
-                        }
-                    </select>
-                </div>
-
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-dark w-100">
-                        Filter
-                    </button>
-                </div>
-
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">
+                Total Tasks
             </div>
-        </form>
+
+            <div class="fs-3 fw-bold">
+                @totalTasks
+            </div>
+        </div>
     </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">
+                Pending
+            </div>
+
+            <div class="fs-3 fw-bold text-secondary">
+                @pendingTasks
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">
+                In Progress
+            </div>
+
+            <div class="fs-3 fw-bold text-primary">
+                @inProgressTasks
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <div class="text-muted small">
+                Completed
+            </div>
+
+            <div class="fs-3 fw-bold text-success">
+                @completedTasks
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<div class="mb-3">
+<!-- Search / Filters -->
+
+<div class="card p-4 mb-4">
+
+    <form asp-action="Index" method="get">
+
+        <div class="row g-3">
+
+            <div class="col-lg-4">
+
+                <label class="form-label fw-semibold">
+                    Search
+                </label>
+
+                <input type="text"
+                       name="search"
+                       value="@ViewBag.Search"
+                       class="form-control"
+                       placeholder="Search by title or description..." />
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label fw-semibold">
+                    Status
+                </label>
+
+                <select name="status"
+                        class="form-select">
+
+                    <option value="">
+                        All Statuses
+                    </option>
+
+                    @foreach (var status in ViewBag.Statuses)
+                    {
+                        if (ViewBag.Status == status)
+                        {
+                            <option value="@status" selected>
+                                @status
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@status">
+                                @status
+                            </option>
+                        }
+                    }
+
+                </select>
+
+            </div>
+
+            <div class="col-lg-3">
+
+                <label class="form-label fw-semibold">
+                    Priority
+                </label>
+
+                <select name="priority"
+                        class="form-select">
+
+                    <option value="">
+                        All Priorities
+                    </option>
+
+                    @foreach (var priority in ViewBag.Priorities)
+                    {
+                        if (ViewBag.Priority == priority)
+                        {
+                            <option value="@priority" selected>
+                                @priority
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@priority">
+                                @priority
+                            </option>
+                        }
+                    }
+
+                </select>
+
+            </div>
+
+            <div class="col-lg-2 d-flex align-items-end">
+
+                <button type="submit"
+                        class="btn btn-dark w-100">
+                    Filter
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+<!-- Sorting -->
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+
     <a asp-action="Index"
        asp-route-search="@ViewBag.Search"
        asp-route-status="@ViewBag.Status"
        asp-route-priority="@ViewBag.Priority"
        asp-route-sort="dueDate"
-       class="btn btn-outline-secondary btn-sm">
+       class="btn btn-sm btn-outline-secondary">
         Due Date ↑
     </a>
 
@@ -93,25 +215,40 @@
        asp-route-status="@ViewBag.Status"
        asp-route-priority="@ViewBag.Priority"
        asp-route-sort="dueDate_desc"
-       class="btn btn-outline-secondary btn-sm">
+       class="btn btn-sm btn-outline-secondary">
         Due Date ↓
     </a>
 
     <a asp-action="Index"
-       class="btn btn-outline-secondary btn-sm">
+       class="btn btn-sm btn-outline-secondary">
         Clear Filters
     </a>
+
 </div>
 
 @if (!Model.Any())
 {
-    <div class="text-center py-5">
-        <h4>No tasks found</h4>
-        <p class="text-muted">Create your first task to get started.</p>
+    <div class="card empty-state">
 
-        <a asp-action="Create" class="btn btn-primary">
-            Create Task
-        </a>
+        <div class="empty-state-icon">
+            📋
+        </div>
+
+        <h4 class="fw-bold">
+            No tasks found
+        </h4>
+
+        <p class="text-muted">
+            You don't have any tasks yet.
+        </p>
+
+        <div>
+            <a asp-action="Create"
+               class="btn btn-primary">
+                Create Your First Task
+            </a>
+        </div>
+
     </div>
 }
 else
@@ -123,7 +260,7 @@ else
             var priorityClass = task.Priority switch
             {
                 "High" => "danger",
-                "Medium" => "warning",
+                "Medium" => "warning text-dark",
                 _ => "success"
             };
 
@@ -134,13 +271,13 @@ else
                 _ => "secondary"
             };
 
-            <div class="col-md-6 col-lg-4">
+            <div class="col-md-6 col-xl-4">
 
-                <div class="card h-100 shadow-sm">
+                <div class="card task-card h-100">
 
                     <div class="card-body">
 
-                        <div class="d-flex justify-content-between mb-2">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
 
                             <span class="badge bg-@priorityClass">
                                 @task.Priority
@@ -152,42 +289,53 @@ else
 
                         </div>
 
-                        <h5 class="card-title">
+                        <h5 class="fw-bold mb-2">
                             @task.Title
                         </h5>
 
-                        <p class="card-text text-muted">
-                            @(string.IsNullOrWhiteSpace(task.Description)
-                                ? "No description"
-                                : task.Description)
+                        <p class="text-muted mb-3">
+
+                            @if (string.IsNullOrWhiteSpace(task.Description))
+                            {
+                                <span>No description provided.</span>
+                            }
+                            else
+                            {
+                                @task.Description
+                            }
+
                         </p>
 
-                        <p class="small text-muted">
-                            <strong>Due:</strong>
-                            @(task.DueDate?.ToString("dd MMM yyyy") ?? "No due date")
-                        </p>
+                        <div class="small text-muted">
+
+                            <strong>Due date:</strong>
+
+                            @(task.DueDate?.ToString("dd MMM yyyy")
+                                ?? "No due date")
+
+                        </div>
 
                     </div>
 
-                    <div class="card-footer bg-white border-0">
+                    <div class="card-footer bg-white border-0 p-3">
 
                         <div class="d-flex gap-2">
 
                             <a asp-action="Details"
                                asp-route-id="@task.Id"
-                               class="btn btn-sm btn-outline-primary">
+                               class="btn btn-sm btn-outline-primary flex-fill">
                                 Details
                             </a>
 
                             <a asp-action="Edit"
                                asp-route-id="@task.Id"
-                               class="btn btn-sm btn-outline-warning">
+                               class="btn btn-sm btn-outline-warning flex-fill">
                                 Edit
                             </a>
 
                             <a asp-action="Delete"
                                asp-route-id="@task.Id"
-                               class="btn btn-sm btn-outline-danger">
+                               class="btn btn-sm btn-outline-danger flex-fill">
                                 Delete
                             </a>
 
@@ -214,5 +362,6 @@ else
 
             </div>
         }
+
     </div>
 }

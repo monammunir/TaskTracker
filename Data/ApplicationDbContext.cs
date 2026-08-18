@@ -1,12 +1,10 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TaskTrackr.Models;
 
 namespace TaskTrackr.Data
 {
-    public class ApplicationDbContext
-        : IdentityDbContext<IdentityUser>
+    public class ApplicationDbContext : IdentityDbContext
     {
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
@@ -14,6 +12,6 @@ namespace TaskTrackr.Data
         {
         }
 
-        public DbSet<TaskItem> Tasks { get; set; }
+        public DbSet<TaskItem> TaskItems { get; set; } = null!;
     }
 }

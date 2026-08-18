@@ -6,24 +6,19 @@ namespace TaskTrackr.Models
     {
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Task title is required.")]
-        [StringLength(100)]
-        [Display(Name = "Task Title")]
+        [Required]
+        [StringLength(200)]
         public string Title { get; set; } = string.Empty;
 
-        [StringLength(500)]
+        [StringLength(1000)]
         public string? Description { get; set; }
 
-        [Display(Name = "Due Date")]
-        [DataType(DataType.Date)]
         public DateTime? DueDate { get; set; }
 
-        [Required]
-        public string Priority { get; set; } = "Medium";
-
-        [Required]
         public string Status { get; set; } = "Pending";
 
-        public string UserId { get; set; } = string.Empty;
+        public string Priority { get; set; } = "Medium";
+
+        public string? UserId { get; set; }
     }
 }

@@ -1,22 +1,221 @@
 html {
-  font-size: 14px;
+    font-size: 15px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html {
+        font-size: 16px;
+    }
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    background: #f4f7fb;
+    color: #1f2937;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+
+.task-navbar {
+    background: #172554;
+    min-height: 68px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.12);
+}
+
+.navbar-brand {
+    font-size: 1.35rem;
+    letter-spacing: 0.3px;
+}
+
+.brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    border-radius: 9px;
+    background: #3b82f6;
+    color: white;
+}
+
+.task-navbar .nav-link {
+    color: rgba(255, 255, 255, 0.82) !important;
+    font-weight: 500;
+    margin: 0 4px;
+    border-radius: 7px;
+    padding: 8px 12px !important;
+}
+
+.task-navbar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white !important;
+}
+
+/* =========================
+   MAIN
+   ========================= */
+
+.main-content {
+    min-height: calc(100vh - 135px);
+    padding: 40px 0;
+}
+
+/* =========================
+   CARDS
+   ========================= */
+
+.card {
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+.task-card {
+    transition: transform 0.2s ease,
+                box-shadow 0.2s ease;
+}
+
+.task-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* =========================
+   BUTTONS
+   ========================= */
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.btn-primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* =========================
+   FORMS
+   ========================= */
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 10px 12px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.12);
+}
+
+/* =========================
+   BADGES
+   ========================= */
+
+.badge {
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-weight: 600;
+}
+
+/* =========================
+   ALERTS
+   ========================= */
+
+.alert {
+    border: 0;
+    border-radius: 10px;
+}
+
+/* =========================
+   DASHBOARD
+   ========================= */
+
+.dashboard-title {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.dashboard-subtitle {
+    color: #6b7280;
+}
+
+/* =========================
+   EMPTY STATE
+   ========================= */
+
+.empty-state {
+    padding: 70px 20px;
+    text-align: center;
+}
+
+.empty-state-icon {
+    font-size: 50px;
+    margin-bottom: 15px;
+}
+
+/* =========================
+   FOOTER
+   ========================= */
+
+.task-footer {
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 20px 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* =========================
+   LOGIN / REGISTER
+   ========================= */
+
+.auth-container {
+    max-width: 480px;
+    margin: 20px auto;
+}
+
+.auth-card {
+    padding: 30px;
+}
+
+.auth-title {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    color: #6b7280;
+    margin-bottom: 25px;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 767px) {
+
+    .main-content {
+        padding: 25px 0;
+    }
+
+    .dashboard-title {
+        font-size: 1.6rem;
+    }
+
+    .task-navbar .navbar-nav {
+        margin-left: 0 !important;
+    }
 }

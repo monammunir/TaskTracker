@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Moq;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.EntityFrameworkCore;
 using TaskTrackr.Controllers;
 using TaskTrackr.Data;
 using TaskTrackr.Models;
@@ -13,223 +12,474 @@ namespace TaskTrackr.Tests
 {
     public class TasksControllerTests
     {
-        private ApplicationDbContext CreateDbContext()
+        private readonly ApplicationDbContext _context;
+        private readonly TasksController _controller;
+
+        public TasksControllerTests()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .UseInMemoryDatabase(
+                    Guid.NewGuid().ToString())
                 .Options;
 
-            return new ApplicationDbContext(options);
+            _context = new ApplicationDbContext(options);
+
+            _controller = new TasksController(_context);
+
+            SetUser();
+            SetTempData();
         }
 
-        private TasksController CreateController(
-            ApplicationDbContext context,
-            string userId = "test-user")
+
+        // -----------------------------------------
+        // Fake logged-in user
+        // -----------------------------------------
+
+        private void SetUser(
+            string userId = "test-user-1")
         {
-            var store = new Mock<IUserStore<IdentityUser>>();
-
-            var userManager = new Mock<UserManager<IdentityUser>>(
-                store.Object,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null);
-
-            userManager
-                .Setup(x => x.GetUserId(It.IsAny<ClaimsPrincipal>()))
-                .Returns(userId);
-
-            var controller = new TasksController(
-                context,
-                userManager.Object);
-
             var claims = new List<Claim>
             {
                 new Claim(
                     ClaimTypes.NameIdentifier,
-                    userId)
+                    userId),
+
+                new Claim(
+                    ClaimTypes.Name,
+                    "test@example.com")
             };
 
             var identity = new ClaimsIdentity(
                 claims,
-                "TestAuth");
+                "TestAuthentication");
 
-            var principal = new ClaimsPrincipal(identity);
+            var principal =
+                new ClaimsPrincipal(identity);
 
-            controller.ControllerContext =
+            _controller.ControllerContext =
                 new ControllerContext
                 {
-                    HttpContext = new DefaultHttpContext
-                    {
-                        User = principal
-                    }
+                    HttpContext =
+                        new DefaultHttpContext
+                        {
+                            User = principal
+                        }
                 };
-
-            return controller;
         }
 
-        [Fact]
-        public async Task Index_ReturnsViewWithUserTasks()
-        {
-            using var context = CreateDbContext();
 
-            context.Tasks.AddRange(
+        // -----------------------------------------
+        // Fake TempData
+        // -----------------------------------------
+
+        private void SetTempData()
+        {
+            _controller.TempData =
+                new TempDataDictionary(
+                    new DefaultHttpContext(),
+                    new TestTempDataProvider());
+        }
+
+
+        // -----------------------------------------
+        // TEST 1
+        // Index only returns current user's tasks
+        // -----------------------------------------
+
+        [Fact]
+        public async Task Index_ReturnsOnlyCurrentUsersTasks()
+        {
+            // Arrange
+
+            _context.TaskItems.AddRange(
                 new TaskItem
                 {
                     Id = 1,
                     Title = "My Task",
-                    Description = "Test",
+                    Description = "My description",
+                    DueDate = DateTime.Today.AddDays(1),
                     Priority = "High",
                     Status = "Pending",
-                    UserId = "test-user"
+                    UserId = "test-user-1"
                 },
+
                 new TaskItem
                 {
                     Id = 2,
                     Title = "Other User Task",
-                    Description = "Test",
+                    Description = "Other description",
+                    DueDate = DateTime.Today.AddDays(2),
                     Priority = "Low",
                     Status = "Pending",
-                    UserId = "another-user"
-                });
+                    UserId = "other-user"
+                }
+            );
 
-            await context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-            var controller = CreateController(context);
 
-            var result = await controller.Index(
-                null,
-                null,
-                null,
-                null);
+            // Act
 
-            var viewResult = Assert.IsType<ViewResult>(result);
+            var result =
+                await _controller.Index(
+                    null,
+                    null,
+                    null);
 
-            var model =
+
+            // Assert
+
+            var viewResult =
+                Assert.IsType<ViewResult>(result);
+
+            var tasks =
                 Assert.IsAssignableFrom<IEnumerable<TaskItem>>(
                     viewResult.Model);
 
-            Assert.Single(model);
+            Assert.Single(tasks);
 
-            Assert.Equal("My Task", model.First().Title);
+            Assert.Equal(
+                "My Task",
+                tasks.First().Title);
+
+            var statuses = Assert.IsAssignableFrom<IEnumerable<string>>(viewResult.ViewData["Statuses"]);
+            Assert.Equal(new[] { "Pending", "In Progress", "Completed" }, statuses);
+
+            var priorities = Assert.IsAssignableFrom<IEnumerable<string>>(viewResult.ViewData["Priorities"]);
+            Assert.Equal(new[] { "Low", "Medium", "High" }, priorities);
         }
 
-        [Fact]
-        public async Task Details_InvalidId_ReturnsNotFound()
-        {
-            using var context = CreateDbContext();
 
-            var controller = CreateController(context);
-
-            var result = await controller.Details(999);
-
-            Assert.IsType<NotFoundResult>(result);
-        }
+        // -----------------------------------------
+        // TEST 2
+        // Create valid task
+        // -----------------------------------------
 
         [Fact]
         public async Task Create_ValidTask_SavesTask()
         {
-            using var context = CreateDbContext();
-
-            var controller = CreateController(context);
+            // Arrange
 
             var task = new TaskItem
             {
-                Title = "New Test Task",
-                Description = "Testing create",
+                Title = "Learn ASP.NET",
+                Description = "Learn MVC and EF Core",
+                DueDate = DateTime.Today.AddDays(5),
                 Priority = "High",
                 Status = "Pending"
             };
 
-            var result = await controller.Create(task);
+
+            // Act
+
+            var result =
+                await _controller.Create(task);
+
+
+            // Assert
 
             var redirect =
-                Assert.IsType<RedirectToActionResult>(result);
+                Assert.IsType<RedirectToActionResult>(
+                    result);
 
-            Assert.Equal("Index", redirect.ActionName);
+            Assert.Equal(
+                "Index",
+                redirect.ActionName);
 
             var savedTask =
-                await context.Tasks.FirstAsync();
+                await _context.TaskItems
+                    .FirstOrDefaultAsync();
+
+            Assert.NotNull(savedTask);
 
             Assert.Equal(
-                "New Test Task",
-                savedTask.Title);
+                "Learn ASP.NET",
+                savedTask!.Title);
 
             Assert.Equal(
-                "test-user",
+                "test-user-1",
                 savedTask.UserId);
+
+            Assert.Equal(
+                "High",
+                savedTask.Priority);
         }
+
+
+        // -----------------------------------------
+        // TEST 3
+        // Create invalid task
+        // -----------------------------------------
+
+        [Fact]
+        public async Task Create_InvalidTask_ReturnsView()
+        {
+            // Arrange
+
+            var task = new TaskItem
+            {
+                Title = "",
+                Description = "Invalid task",
+                DueDate = DateTime.Today.AddDays(1),
+                Priority = "Medium",
+                Status = "Pending"
+            };
+
+            _controller.ModelState.AddModelError(
+                "Title",
+                "Title is required.");
+
+
+            // Act
+
+            var result =
+                await _controller.Create(task);
+
+
+            // Assert
+
+            var viewResult =
+                Assert.IsType<ViewResult>(result);
+
+            Assert.Equal(
+                task,
+                viewResult.Model);
+        }
+
+
+        // -----------------------------------------
+        // TEST 4
+        // Complete task
+        // -----------------------------------------
 
         [Fact]
         public async Task Complete_ChangesStatusToCompleted()
         {
-            using var context = CreateDbContext();
+            // Arrange
 
-            context.Tasks.Add(
-                new TaskItem
-                {
-                    Id = 1,
-                    Title = "Complete Me",
-                    Priority = "Medium",
-                    Status = "Pending",
-                    UserId = "test-user"
-                });
+            var task = new TaskItem
+            {
+                Id = 1,
+                Title = "Complete this",
+                Description = "Test task",
+                DueDate = DateTime.Today.AddDays(1),
+                Priority = "Medium",
+                Status = "Pending",
+                UserId = "test-user-1"
+            };
 
-            await context.SaveChangesAsync();
+            _context.TaskItems.Add(task);
 
-            var controller = CreateController(context);
+            await _context.SaveChangesAsync();
+
+
+            // Act
 
             var result =
-                await controller.Complete(1);
+                await _controller.Complete(1);
+
+
+            // Assert
 
             var redirect =
-                Assert.IsType<RedirectToActionResult>(result);
+                Assert.IsType<RedirectToActionResult>(
+                    result);
 
-            Assert.Equal("Index", redirect.ActionName);
+            Assert.Equal(
+                "Index",
+                redirect.ActionName);
 
-            var task =
-                await context.Tasks.FindAsync(1);
+            var updatedTask =
+                await _context.TaskItems
+                    .FirstAsync(t => t.Id == 1);
 
             Assert.Equal(
                 "Completed",
-                task!.Status);
+                updatedTask.Status);
+
+            Assert.Equal(
+                "Task marked as completed.",
+                _controller.TempData["SuccessMessage"]);
         }
+
+
+        // -----------------------------------------
+        // TEST 5
+        // Delete current user's task
+        // -----------------------------------------
 
         [Fact]
         public async Task Delete_RemovesUserTask()
         {
-            using var context = CreateDbContext();
+            // Arrange
 
-            context.Tasks.Add(
-                new TaskItem
-                {
-                    Id = 1,
-                    Title = "Delete Me",
-                    Priority = "Low",
-                    Status = "Pending",
-                    UserId = "test-user"
-                });
+            var task = new TaskItem
+            {
+                Id = 1,
+                Title = "Delete this",
+                Description = "Test task",
+                DueDate = DateTime.Today.AddDays(1),
+                Priority = "Low",
+                Status = "Pending",
+                UserId = "test-user-1"
+            };
 
-            await context.SaveChangesAsync();
+            _context.TaskItems.Add(task);
 
-            var controller = CreateController(context);
+            await _context.SaveChangesAsync();
+
+
+            // Act
 
             var result =
-                await controller.DeleteConfirmed(1);
+                await _controller.DeleteConfirmed(1);
+
+
+            // Assert
 
             var redirect =
-                Assert.IsType<RedirectToActionResult>(result);
+                Assert.IsType<RedirectToActionResult>(
+                    result);
 
-            Assert.Equal("Index", redirect.ActionName);
+            Assert.Equal(
+                "Index",
+                redirect.ActionName);
 
-            var task =
-                await context.Tasks.FindAsync(1);
+            var deletedTask =
+                await _context.TaskItems
+                    .FirstOrDefaultAsync(
+                        t => t.Id == 1);
 
-            Assert.Null(task);
+            Assert.Null(deletedTask);
+
+            Assert.Equal(
+                "Task deleted successfully.",
+                _controller.TempData["SuccessMessage"]);
+        }
+
+
+        // -----------------------------------------
+        // TEST 6
+        // Cannot delete another user's task
+        // -----------------------------------------
+
+        [Fact]
+        public async Task Delete_DoesNotDeleteAnotherUsersTask()
+        {
+            // Arrange
+
+            var task = new TaskItem
+            {
+                Id = 1,
+                Title = "Other user's task",
+                Description = "Should remain",
+                DueDate = DateTime.Today.AddDays(1),
+                Priority = "Medium",
+                Status = "Pending",
+                UserId = "other-user"
+            };
+
+            _context.TaskItems.Add(task);
+
+            await _context.SaveChangesAsync();
+
+
+            // Act
+
+            var result =
+                await _controller.DeleteConfirmed(1);
+
+
+            // Assert
+
+            Assert.IsType<NotFoundResult>(
+                result);
+
+            var remainingTask =
+                await _context.TaskItems
+                    .FirstOrDefaultAsync(
+                        t => t.Id == 1);
+
+            Assert.NotNull(remainingTask);
+        }
+
+
+        // -----------------------------------------
+        // TEST 7
+        // Cannot complete another user's task
+        // -----------------------------------------
+
+        [Fact]
+        public async Task Complete_DoesNotChangeAnotherUsersTask()
+        {
+            // Arrange
+
+            var task = new TaskItem
+            {
+                Id = 1,
+                Title = "Other user's task",
+                Description = "Should remain pending",
+                DueDate = DateTime.Today.AddDays(1),
+                Priority = "Medium",
+                Status = "Pending",
+                UserId = "other-user"
+            };
+
+            _context.TaskItems.Add(task);
+
+            await _context.SaveChangesAsync();
+
+
+            // Act
+
+            var result =
+                await _controller.Complete(1);
+
+
+            // Assert
+
+            Assert.IsType<NotFoundResult>(
+                result);
+
+            var unchangedTask =
+                await _context.TaskItems
+                    .FirstAsync(
+                        t => t.Id == 1);
+
+            Assert.Equal(
+                "Pending",
+                unchangedTask.Status);
+        }
+    }
+
+
+    // =========================================
+    // Fake TempData Provider for Unit Tests
+    // =========================================
+
+    public class TestTempDataProvider : ITempDataProvider
+    {
+        private readonly Dictionary<string, object?> _data =
+            new Dictionary<string, object?>();
+
+
+        public IDictionary<string, object?> LoadTempData(
+            HttpContext context)
+        {
+            return _data;
+        }
+
+
+        public void SaveTempData(
+            HttpContext context,
+            IDictionary<string, object?> values)
+        {
+            _data.Clear();
+
+            foreach (var item in values)
+            {
+                _data[item.Key] = item.Value;
+            }
         }
     }
 }
